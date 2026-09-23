@@ -1,0 +1,105 @@
+{
+  "mcpServers": {
+    "stitch": {
+      "url": "https://stitch.googleapis.com/mcp",
+      "headers": {
+        "X-Goog-Api-Key": "${STITCH_API_KEY}"
+      },
+      "lifecycle": "lazy",
+      "disabled": true
+    },
+    "jshook": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@jshookmcp/jshook@0.3.4"
+      ],
+      "env": {
+        "JSHOOK_BASE_PROFILE": "search"
+      },
+      "lifecycle": "lazy"
+    },
+    "idapro": {
+      "url": "http://127.0.0.1:13337/mcp",
+      "lifecycle": "lazy",
+      "disabled": true
+    },
+    "ghidra": {
+      "url": "http://localhost:8765/mcp",
+      "lifecycle": "lazy",
+      "disabled": true
+    },
+    "burpsuite": {
+      "url": "http://localhost:9876/mcp",
+      "lifecycle": "lazy",
+      "disabled": true
+    },
+    "anything-analyzer": {
+      "url": "http://localhost:23816/mcp",
+      "lifecycle": "lazy",
+      "disabled": true
+    },
+    "reqable-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "reqable-mcp-server@1.0.1",
+        "--scope",
+        "minimal"
+      ],
+      "lifecycle": "lazy",
+      "disabled": true
+    },
+    "pentest": {
+      "url": "http://localhost:8080/mcp",
+      "lifecycle": "lazy",
+      "disabled": true
+    },
+    "kali-server": {
+      "command": "kali-server-mcp",
+      "args": [
+        "--port",
+        "5000"
+      ],
+      "lifecycle": "lazy",
+      "disabled": true
+    },
+    "metasploit-mcp": {
+      "command": "metasploitmcp",
+      "args": [
+        "--transport",
+        "stdio"
+      ],
+      "lifecycle": "lazy",
+      "disabled": true
+    },
+    "pentestswarm": {
+      "command": "pentestswarm",
+      "args": [
+        "mcp",
+        "serve"
+      ],
+      "lifecycle": "lazy",
+      "disabled": true
+    },
+    "webshell-mgr": {
+      "command": "node",
+      "args": [
+        "{{HOME}}/.pi/agent/redteam-model/plugins/dsh-webshell-mgr/mcp/server.mjs"
+      ],
+      "lifecycle": "lazy"
+    },
+    "kali-mcp-server": {
+      "command": "{{HOME}}/.pi/agent/redteam-model/.venv-kali/bin/python",
+      "args": [
+        "{{HOME}}/.pi/agent/redteam-model/deploy/assets/kali-mcp-server/mcp_server.py",
+        "--transport",
+        "stdio",
+        "--tool-profile",
+        "full"
+      ],
+      "lifecycle": "lazy",
+      "disabled": false
+    }
+  }
+}

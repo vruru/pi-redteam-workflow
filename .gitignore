@@ -1,0 +1,9 @@
+node_modules/
+.venv-kali/
+*.db
+*.db-shm
+*.db-wal
+*.log
+.DS_Store
+work/
+skills/*/work/

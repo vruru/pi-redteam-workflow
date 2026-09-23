@@ -1,0 +1,33 @@
+MIT License
+
+Copyright (c) 2026 vruru
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+Bundled third-party content keeps its own upstream license and attribution:
+
+- skills/reverse-skill/  — from zhaoxuya520/reverse-skill via dhicoc/dsh-reverse-skill (MIT).
+  See skills/reverse-skill/LICENSE and docs/PI-INSTALL.md.
+- skills/redteam-model/ + data/redteam-model/ — from SeaOf0/dsh-redteam-model (MIT),
+  whose refs/ knowledge base credits the Linux/Windows INCIDENT-RESPONSE cookbooks
+  (Just-Hack-For-Fun) and the EASY233/Finger, EdgeSecurityTeam/EHole, 0x727/FingerprintHub,
+  Mr-xn/Finger fingerprint collections. See data/redteam-model/LICENSE.
+- data/redteam-model/deploy/assets/kali-mcp-server/ — bundled Kali MCP server.

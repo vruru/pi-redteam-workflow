@@ -1,0 +1,44 @@
+{
+	"name": "@dsh-external/dsh-attack-atlas",
+	"version": "1.2.1",
+	"description": "AttackAtlas tab for the eight specialist security presets: per-mode architecture matrix (battle zones x tactics x items with per-mode terminal-state semantics), four-state coverage light-up, dispatch-on-double-click, attack-chain topology, custom work-methodology composer (layered run envelope, closure inquiry), tool/MCP/custom-tool modules with install-approval protocol, and a capability library of user-defined categories and items shared into the composer. v1.2.0 made the target a first-class dimension of the coverage ledger: coverage cells, stage bands and chain topology are accounted per target (same cell keeps independent terminal states per target), with an active-target pointer (first registered target auto-activates; redteam_atlas_target switch re-anchors; writes default to the active target), a per-target/aggregate matrix view, and org (organization) as a target kind. v1.2.1 selects the working target from a dropdown (selecting re-anchors and routes dispatches/default writes to it; a persistent badge shows the active anchor), and adds the LLM output-downstream-parsing cell (jailbreak only becomes a traditional vuln when the server re-parses model output into deserialization/SSTI/command sinks; pure-text-model targets have no such bridge). Legacy stores migrate automatically (single-target sessions attributed, multi-target rows kept in the session-common scope; *_legacy tables retained).",
+	"keywords": [
+		"deepseek",
+		"deepseek-harness",
+		"dsh-plugin",
+		"dsh-bundle",
+		"coverage-matrix",
+		"session-scoped"
+	],
+	"type": "module",
+	"main": "./lib/index.js",
+	"exports": {
+		".": "./lib/index.js",
+		"./client": "./lib/client.js",
+		"./package.json": "./package.json",
+		"./store": "./lib/store.js",
+		"./taxonomy": "./lib/taxonomy.js"
+	},
+	"peerDependencies": {
+		"@deepseek-ai/dsh-tools": "*"
+	},
+	"license": "MIT",
+	"author": "SeaOf0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/SeaOf0/dsh-redteam-model.git"
+	},
+	"dsh": {
+		"bundle": {
+			"patch": "./cordis.patch.yml"
+		},
+		"client": {
+			"platform": "web",
+			"inject": [
+				"@deepseek-ai/dsh-client-connection",
+				"@deepseek-ai/dsh-client-runtime",
+				"@deepseek-ai/dsh-client-ui-settings"
+			]
+		}
+	}
+}

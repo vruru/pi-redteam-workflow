@@ -1,0 +1,60 @@
+{
+  "name": "@dhicoc/dsh-reverse-skill",
+  "description": "Complete reverse-skill (87 skills) as a DeepSeek Harness Cordis plugin — reverse engineering, authorized pentesting and security research skill router pack.",
+  "version": "1.0.5",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "files": [
+    "lib",
+    "skills",
+    "CTF-Sandbox-Orchestrator",
+    "cordis.patch.yml"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dhicoc/dsh-reverse-skill.git"
+  },
+  "homepage": "https://github.com/dhicoc/dsh-reverse-skill#readme",
+  "bugs": {
+    "url": "https://github.com/dhicoc/dsh-reverse-skill/issues"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "keywords": [
+    "deepseek",
+    "dsh",
+    "cordis",
+    "plugin",
+    "skill",
+    "reverse-engineering",
+    "pentest",
+    "security-research",
+    "ctf"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node _selftest.mjs",
+    "prepublishOnly": "tsc"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-skill": "^0.0.1-rc.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-skill": "^0.0.1-rc.1",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}

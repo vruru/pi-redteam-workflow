@@ -21,7 +21,8 @@
 pi install git:github.com/vruru/pi-redteam-workflow
 
 # 2) 建立仓库链接 + 合并 MCP 配置（幂等，可反复跑）
-node ~/.pi/agent/npm/node_modules/pi-redteam-workflow/scripts/setup.mjs
+node ~/.pi/agent/git/github.com/vruru/pi-redteam-workflow/scripts/setup.mjs
+#    Pi 把 git 包装在 <agentDir>/git/<host>/<owner>/<repo>；不确定落点就跑 `pi list` 查看。
 #    想顺便为 kali-mcp-server 建 Python venv：加 --with-kali-mcp
 #    只想看不写：加 --check
 

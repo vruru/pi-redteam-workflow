@@ -818,8 +818,13 @@ export function appendGateLog(workspace: string, verdict: Verdict): string {
 	return log;
 }
 
-/** 登记目标契约：criteria 为多行文本，每行一条成功准则（可判定表述）。 */
-export function setGoal(workspace: string, goal: string, criteriaText: string): OperationState {
+/**
+ * 登记目标契约：criteria 为多行文本，每行一条成功准则（可判定表述）。
+ * mode = 调用方解析好的模式（显式参数 → 状态文件既有 mode），非空即回写 st.mode。
+ * 缺陷修复：原先 operation_goal 不落 mode，route-boost 注入与报告对账要等第一次 stage_gate 才有真值。
+ * 仍由 writeState 单一写者落盘，字段与 syncOperationState 完全同格式（不造第二份真值）。
+ */
+export function setGoal(workspace: string, goal: string, criteriaText: string, mode?: string): OperationState {
 	const lines = String(criteriaText ?? "")
 		.split(/\r?\n/)
 		.map((l) => cleanLine(l, 200))
@@ -831,6 +836,8 @@ export function setGoal(workspace: string, goal: string, criteriaText: string): 
 	const st: OperationState = prev ?? { version: 1, mode: "", goal: "", criteria: [], gates: {}, pending: [], created_at: new Date().toISOString() };
 	st.goal = cleanLine(goal, 500);
 	st.criteria = lines.map((text, i) => ({ id: `g${i + 1}`, text, status: "open" as const, evidence: "" }));
+	const modeNorm = String(mode ?? "").trim();
+	if (modeNorm) st.mode = modeNorm;
 	st.updated_at = new Date().toISOString();
 	writeState(workspace, st);
 	return st;
@@ -1399,7 +1406,7 @@ export default function (pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "operation_goal",
 		label: "operation goal",
-		description: "Register the task's goal as a decidable contract into <workspace>/operation-state.json: one-line goal + success criteria (one per line, each independently verifiable). Do this at task start (before the first stage_gate). Criteria close one by one via operation_progress; reports/ output additionally requires every criterion met. The same file powers interruption recovery — a fresh session resumes from it. 按模式拆分准则参考返回体的拆分理论（mode 缺省读状态文件已记录的 mode）。",
+		description: "Register the task's goal as a decidable contract into <workspace>/operation-state.json: one-line goal + success criteria (one per line, each independently verifiable). Do this at task start (before the first stage_gate). Criteria close one by one via operation_progress; reports/ output additionally requires every criterion met. The same file powers interruption recovery — a fresh session resumes from it. 按模式拆分准则参考返回体的拆分理论（mode 缺省读状态文件已记录的 mode）；解析出的 mode 会写回 operation-state.json 的 mode 字段，与 stage_gate 共用同一份真值。",
 		promptSnippet: "登记目标契约（goal + 可判定准则 g1..gN）",
 		promptGuidelines: ["任务开工先 operation_goal 登记可判定目标（再 operation_constraints / operation_scope），不得只写在回复里。"],
 		executionMode: "sequential",
@@ -1411,8 +1418,9 @@ export default function (pi: ExtensionAPI) {
 		}),
 		async execute(_id, p, _signal, _onUpdate, ctx) {
 			return withState(ctx, p.workspace, (ws) => {
-				const st = setGoal(ws, p.goal, p.criteria);
-				const mode = resolveMode(p.mode, st);
+				// mode 先解析后写：解析结果随目标契约一并落盘（见 setGoal 注释）
+				const mode = resolveMode(p.mode, readOperationState(fs, ws));
+				const st = setGoal(ws, p.goal, p.criteria, mode);
 				const prevScope = normalizeScope(readOperationState(fs, ws)).length > 0;
 				const scopeDraft = prevScope ? [] : deriveScopeDraft([p.goal, p.criteria], mode);
 				const d = mode ? DECOMPOSITION[mode] : undefined;

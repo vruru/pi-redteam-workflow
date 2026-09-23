@@ -44,8 +44,10 @@ const CONFIG_FILE = path.join(STATE_DIR, "config.json");
 const GLOBAL_LOG = path.join(STATE_DIR, "enforce-log.md");
 const RULES_DOC = path.join(STATE_DIR, "rules.md");
 const KILL_MARKER = (): string => process.env.PI_SEC_ENFORCE_KILL_FILE || path.join(STATE_DIR, "KILL");
+/** 只读控制面自身：熔断期间不拦——它是 Agent 唯一的自查/自恢复通道（见 decide 的 killSwitch 分支）。 */
+const SELF_TOOL = "sec_enforce_status";
 const KILL_REASON = (): string =>
-	`全局熔断已触发：所有工具执行暂停（一键停止）。恢复方法：移除标记文件 ${KILL_MARKER()}（或 /sec-enforce clear）。熔断期间仅回答问题，不执行任何操作。`;
+	`全局熔断已触发：所有工具执行暂停（一键停止）。恢复方法：sec_enforce_status action=clear（Agent 自恢复，推荐）、/sec-enforce clear（用户），或移除标记文件 ${KILL_MARKER()}。熔断期间仅回答问题与调用 ${SELF_TOOL}，不执行任何测试或攻击操作。`;
 
 const killTripped = (): boolean => {
 	try {
@@ -470,7 +472,10 @@ export function decide(
 	env: DecideEnv,
 ): Decision | undefined {
 	const cfg = env.config;
-	if (cfg.killSwitch && env.killTripped) return { kind: "block", rule: "killSwitch", reason: KILL_REASON() };
+	// 熔断拦一切「操作」，但保留只读控制面自身：否则 Agent 连「查状态 / 解除熔断」都被拦，
+	// 熔断变成只有人工能救的死锁。sec_enforce_status 不执行任何测试/攻击动作，不违反熔断语义。
+	if (cfg.killSwitch && env.killTripped && exec.toolName !== SELF_TOOL)
+		return { kind: "block", rule: "killSwitch", reason: KILL_REASON() };
 	if (!env.armed) return undefined;
 
 	const { toolName, input } = exec;
@@ -749,6 +754,9 @@ export function runSelfTest(): { pass: number; fail: number; failures: string[] 
 	ok("toggles all off = no-op", decide(bash("systemctl restart nginx"), env({ config: { ...cfg, dangerousOps: false, rateDiscipline: false, askGate: false, writeBoundary: false, reportGate: false } })) === undefined);
 	// kill switch
 	ok("kill switch blocks non-armed session too", decide(bash("ls"), env({ armed: false, killTripped: true }))?.kind === "block");
+	ok("kill switch still blocks write tool", decide(write(`${WS}/assets.md`, "y"), env({ killTripped: true }))?.rule === "killSwitch");
+	ok("kill switch does NOT block sec_enforce_status (agent self-recovery path)", decide({ toolName: "sec_enforce_status", input: { action: "clear" } }, env({ killTripped: true })) === undefined);
+	ok("kill switch does NOT block sec_enforce_status when unarmed", decide({ toolName: "sec_enforce_status", input: {} }, env({ armed: false, killTripped: true })) === undefined);
 	// geometry helpers
 	ok("isReportPath false for outside ws", isReportPath("/other/reports/x.md", WS) === false);
 	{
@@ -817,7 +825,7 @@ export function runSelfTest(): { pass: number; fail: number; failures: string[] 
 
 // ── extension factory ──
 
-const StatusParams = Type.Object({ action: Type.Optional(Type.String({ description: "status | rules | log（默认 status）" })) });
+const StatusParams = Type.Object({ action: Type.Optional(Type.String({ description: "status | rules | log | clear（默认 status）；clear=解除全局熔断（删 KILL 标记并在 enforce-log 留痕）" })) });
 
 export default function (pi: ExtensionAPI) {
 	const readGateLog = (workspace: string) => safeRead(path.join(workspace, "gate-log.md"));
@@ -930,7 +938,7 @@ export default function (pi: ExtensionAPI) {
 		name: "sec_enforce_status",
 		label: "sec_enforce_status",
 		description:
-			"查询确定性安全门禁当前是否生效、生效哪几档、以及最近拦截记录。被拦截后不确定规则时用它，不要猜。action 可省（status）；rules=规则全表；log=最近拦截行。",
+			"查询确定性安全门禁当前是否生效、生效哪几档、以及最近拦截记录。被拦截后不确定规则时用它，不要猜。action 可省（status）；rules=规则全表；log=最近拦截行；clear=解除全局熔断（KILL 熔断期间的 Agent 自恢复通道，本工具自身不受熔断拦截）。",
 		parameters: StatusParams,
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			const cfg = loadConfig();
@@ -938,7 +946,34 @@ export default function (pi: ExtensionAPI) {
 			const action = (params.action || "status").trim();
 			let text: string;
 			if (action === "rules") text = RULES_TABLE;
-			else if (action === "log") {
+			else if (action === "clear") {
+				const marker = KILL_MARKER();
+				const wasTripped = killTripped();
+				let err = "";
+				try {
+					fs.rmSync(marker, { force: true });
+				} catch (e) {
+					err = String((e as Error)?.message ?? e);
+				}
+				const still = killTripped();
+				appendLog(ctx.cwd, logRow(st, {
+					kind: wasTripped ? "clear" : "clear-noop",
+					rule: "killSwitch",
+					reason: err
+						? `解除全局熔断失败：${err}`
+						: wasTripped ? "Agent 主动解除全局熔断：sec_enforce_status action=clear" : "全局熔断原本未触发：action=clear 幂等无副作用",
+				}, SELF_TOOL));
+				text = [
+					wasTripped ? "全局熔断已解除（此前处于触发态）" : "全局熔断此前未触发（幂等 no-op，未产生副作用）",
+					`标记文件 ${marker} 现在${still ? "仍存在" : "不存在"}${err ? `；删除报错：${err}` : ""}`,
+					still ? "工具链仍被拦——请把上面的报错转给用户处理。" : `工具链已恢复；熔断判定每次工具调用重读标记文件，下一轮即生效。`,
+					`留痕：${GLOBAL_LOG}（action=log 可查）`,
+				].join("\n");
+				return {
+					content: [{ type: "text", text }],
+					details: { armed: st.armed, mode: st.mode ?? null, via: st.via || null, config: cfg, blocks: st.totalBlocks, killWasTripped: wasTripped, killTrippedNow: still, clearError: err || null },
+				};
+			} else if (action === "log") {
 				const tail = safeRead(GLOBAL_LOG).split("\n").filter((l) => l.startsWith("|")).slice(-15).join("\n") || "（暂无拦截记录）";
 				text = `拦截留痕（最近 15 条，全文 ${GLOBAL_LOG}）\n${tail}`;
 			} else {
@@ -1043,7 +1078,7 @@ const RULES_TABLE = `# dsh-sec-enforce 拦截规则表（Pi port）
 
 | 档 | 触发条件（决定性特征） | 判定 | 指路 |
 |---|---|---|---|
-| killSwitch | 标记文件 ${KILL_MARKER()} 存在（或 PI_SEC_ENFORCE_KILL_FILE） | 拦全部工具（跨模式） | rm 该文件 / /sec-enforce clear |
+| killSwitch | 标记文件 ${KILL_MARKER()} 存在（或 PI_SEC_ENFORCE_KILL_FILE） | 拦全部工具（跨模式） | rm 该文件 / sec_enforce_status action=clear / /sec-enforce clear |
 | writeBoundary | write/edit 目标解析后不在 ${'${workspace}'}（含 allowDirs 与本件状态目录）内 | block | 改写工作区内路径，或加 allowDirs |
 | taskBriefGate | 仅 redteam 模式：写 task-briefs/*.md 且正文无「依据：/锚点：」行 | block | 补「依据：…」锚点行 |
 | reportGate | 写 <workspace>/reports/**：需 gate-log.md 有 "<mode>/<gate> \\| pass" 行（pentest P3 / code-audit A3 / binary-analysis B2 / attack-defense report / av-evasion V4 / incident-response I5 / cloud-security C7 / ctf-solver flag）；redteam 与 asset-mapping 无门→专用文案；再查 operation-state.json 未收口准则/意图 | block | 先过对应门（stage_gate 或手工追加 pass 行） |

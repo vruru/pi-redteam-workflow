@@ -63,12 +63,11 @@ node ~/.pi/agent/git/github.com/vruru/pi-redteam-workflow/scripts/setup.mjs
 ~/.pi/agent/skills/reverse-skill/toggle-ctf.sh on|off|status
 ```
 
-### 扩展（16 件，约 43 个模型工具 + 15 个命令，实测零重名零冲突）
+### 扩展（15 件启用，dsh-sec-enforce 已移除）
 
 | 扩展 | 干什么 |
 |---|---|
 | `dsh-stage-gate` | `stage_gate` / `gates_list` + `operation_goal/_progress/_intent/_scope/_constraints`：八模式 **32 道门**结构校验，判定写 `gate-log.md`，中断可恢复。结构校验由工具硬 reject，模型不能自评过关 |
-| `dsh-sec-enforce` | 确定性拦截：报告门、写边界、**高危/不可逆操作先问后做**、裸奔扫描限速；留痕 `enforce-log.md`；未 arm 时零介入 |
 | `dsh-scanner-tools` | 16 个扫描工具封装（nmap/masscan/nuclei/httpx/ffuf/subfinder/gau/whatweb/wafw00f/dirsearch/sqlmap/nikto/hydra/impacket/netexec/crackmapexec）：声明式注册表 + 保守默认参数 + 六节点兜底阶梯（本机→MCP→已装替代→MCP 备选→询问安装→脚本）+ 防盲打台账 + 连续失败熔断。**检测制，绝不自动装工具** |
 | `dsh-semgrep-audit` | `semgrep_scan`：三层离线规则集定位、`--metrics=off`、命中双写 `scan-reconcile.md/.csv`（命中≠漏洞，复核后才升格） |
 | `dsh-hunter` | `fofa_search` / `fofa_account_status`：被动资产测绘，游标分页，免费账户字段权限自动降级重试 |
@@ -94,7 +93,7 @@ node ~/.pi/agent/git/github.com/vruru/pi-redteam-workflow/scripts/setup.mjs
 
 ## 设计取舍（会影响你的使用体验，请读）
 
-1. **模式 persona 没有装。** 上游十个模式各带约 370 行 persona（铁律、报告字段纪律、反拒绝条款、目标零破坏…）。它们会持续约束模型行为，本包默认**不注入**；你随时可以 `/skill:pentest-playbook` 主动取用方法论。唯一被保留的硬性护栏是「**删除 / DROP / TRUNCATE / 资金类接口 / 服务重启 / 改配置等不可逆操作禁止自动执行，只呈报计划**」，由 `dsh-sec-enforce` 用代码实现，而不是写成提示词。
+1. **模式 persona 没有装。** 上游十个模式各带约 370 行 persona（铁律、报告字段纪律、反拒绝条款、目标零破坏…）。它们会持续约束模型行为，本包默认**不注入**；你随时可以 `/skill:pentest-playbook` 主动取用方法论。`dsh-sec-enforce` 已按用户要求从自动加载目录移除，原实现仅归档于 `disabled-extensions/`。它的 dangerousOps、写边界、报告门、扫描限速、任务约束和熔断等工具拦截不再随本包启用；其他扩展保持原状。
 2. **面板类是文本/文件形态。** 攻击面图谱、成果大屏、会话侧栏在 Pi 里没有 web 容器，因此输出为 markdown 台账 + 文本表格 + 状态行；`--print` / JSON 模式完全可用。
 3. **缺工具不代装。** scanner / semgrep 走检测制，缺了会给你三级兜底建议（含可复制的脚本替代），不会擅自 `brew/pip install`。
 4. **AttackAtlas 覆盖态已改为工作区级跨会话延续**（上游原本是 session-scoped）：同一工作区里新会话直接接着上次的矩阵与锚定目标，旧库自动迁移（迁移前备份 `atlas.db`）。

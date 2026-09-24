@@ -1,7 +1,7 @@
 {
   "name": "pi-redteam-workflow",
   "version": "0.1.1",
-  "description": "逆向工程 / 渗透测试 / 红队安全工作流合集：120 个技能 + 16 个 Pi 扩展（阶段门禁、确定性拦截、扫描器阶梯、FOFA 测绘、攻击面矩阵、战役记忆、过程留痕），并登记常用安全 MCP。",
+  "description": "逆向工程 / 渗透测试 / 红队安全工作流合集：120 个技能 + 15 个 Pi 扩展（阶段门禁、扫描器阶梯、FOFA 测绘、攻击面矩阵、战役记忆、过程留痕），并登记常用安全 MCP。",
   "keywords": [
     "pi-package",
     "reverse-engineering",

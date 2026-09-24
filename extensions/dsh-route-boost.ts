@@ -19,7 +19,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { detectWorkspaceMode, SECURITY_MODES } from "./dsh-sec-enforce";
+import { detectWorkspaceMode, SECURITY_MODES } from "./lib/workspace-mode";
 import { listGates, readOperationState, type OperationState } from "./dsh-stage-gate";
 
 export const SECTION_KEY = "dsh-route-boost";
